@@ -1,0 +1,20 @@
+{
+    "button0": {
+        "enabled": {
+            "type": "boolean",
+            "value": false
+        },
+        "pin": {
+            "type": "number",
+            "value": 12
+        },
+        "socketCmd": {
+            "type": "string",
+            "value": ""
+        },
+        "socketData": {
+            "type": "string",
+            "value": ""
+        }
+    }
+}
