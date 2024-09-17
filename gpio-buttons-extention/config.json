@@ -10,11 +10,11 @@
         },
         "socketCmd": {
             "type": "string",
-            "value": ""
+            "value": "playPlaylist"
         },
         "socketData": {
             "type": "string",
-            "value": ""
+            "value": "{\"name\": \"1\"}"
         }
     }
 }

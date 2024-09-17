@@ -15,7 +15,7 @@ function GPIOButtonsExtention(context) {
 	self.commandRouter = self.context.coreCommand;
 	self.logger = self.context.logger;
 	self.configManager = self.context.configManager;
-
+	self.triggers = [];
 }
 
 
@@ -35,8 +35,12 @@ GPIOButtonsExtention.prototype.onStart = function () {
 	var defer = libQ.defer();
 
 
-	// Once the Plugin has successfull started resolve the promise
-	defer.resolve();
+	self.createTriggers()
+		.then(function (result) {
+			self.logger.info("GPIO-Buttons-Extention started");
+			defer.resolve();
+		});
+
 
 	return defer.promise;
 };
@@ -45,8 +49,11 @@ GPIOButtonsExtention.prototype.onStop = function () {
 	var self = this;
 	var defer = libQ.defer();
 
-	// Once the Plugin has successfull stopped resolve the promise
-	defer.resolve();
+	self.clearTriggers()
+		.then(function (result) {
+			self.logger.info("GPIO-Buttons-Extention stopped");
+			defer.resolve();
+		});
 
 	return libQ.resolve();
 };
@@ -88,25 +95,28 @@ GPIOButtonsExtention.prototype.getUIConfig = function () {
 
 				uiconf.sections[0].content.forEach(element => {
 					if (element.id === enabledDataField) {
+						self.logger.info('Get EnabledConf: ' + self.config.get(enabledConfig));
 						element.value = self.config.get(enabledConfig);
 					}
 					if (element.id === pinDataField) {
+						self.logger.info('Get pinConf: ' + self.config.get(pinConfig));
+						self.logger.info('Get pinConf Label: ' + self.config.get(pinConfig).toString());
+
 						element.value.value = self.config.get(pinConfig);
 						element.value.label = self.config.get(pinConfig).toString();
 					}
 					if (element.id === socketCmdDataField) {
-						element.value = self.config.get(socketCmdConfig);
+						self.logger.info('Get CmdConf: ' + JSON.stringify(self.config.get(socketCmdConfig)));
+						element.value.value = self.config.get(socketCmdConfig);
+						element.value.label = self.config.get(socketCmdConfig);
 					}
 					if (element.id === socketDataDataField) {
-						element.value = self.config.get(socketDataConfig);
+						self.logger.info('Get socketDataConf: ' + JSON.stringify(self.config.get(socketDataConfig)));
+						element.value.value = self.config.get(socketDataConfig);
+						self.logger.info('Get socketDataConf Label: ' + 'Playlist '.concat(self.config.get(socketDataConfig)['name']));
+						element.value.label = 'Playlist '.concat(JSON.parse(self.config.get(socketDataConfig))['name']);
 					}
 				});
-
-				// uiconf.sections[0].content[2 * i].value = self.config.get(c1);
-				// uiconf.sections[0].content[2 * i + 1].value.value = self.config.get(c2);
-				// uiconf.sections[0].content[2 * i + 1].value.label = self.config.get(c2).toString();
-
-				// i = i + 1;
 			});
 
 			defer.resolve(uiconf);
@@ -120,7 +130,6 @@ GPIOButtonsExtention.prototype.getUIConfig = function () {
 
 GPIOButtonsExtention.prototype.saveConfig = function (data) {
 	var self = this;
-	self.logger.info("Bin da!");
 
 	buttons.forEach(function (button, index, array) {
 		// Strings for data fields
@@ -137,14 +146,68 @@ GPIOButtonsExtention.prototype.saveConfig = function (data) {
 
 		self.config.set(enabledConfig, data[enabledDataField]);
 		self.config.set(pinConfig, data[pinDataField]['value']);
-		self.config.set(socketCmdConfig, data[socketCmdDataField]);
-		self.config.set(socketDataConfig, data[socketDataDataField]);
+		self.config.set(socketCmdConfig, data[socketCmdDataField]['value']);
+		self.config.set(socketDataConfig, data[socketDataDataField]['value']);
 	});
 
-	// self.clearTriggers()
-	// 	.then(self.createTriggers());
+	self.clearTriggers()
+		.then(self.createTriggers());
 
 	self.commandRouter.pushToastMessage('success', "GPIO-Buttons-Extention", "Configuration saved");
+};
+
+GPIOButtonsExtention.prototype.createTriggers = function () {
+	var self = this;
+
+	self.logger.info('GPIO-Buttons-Extention: Reading config and creating triggers...');
+
+	buttons.forEach(function (button, index, array) {
+		var enabledConfig = button.concat('.enabled');
+		var pinConfig = button.concat('.pin');
+
+		var enabled = self.config.get(enabledConfig);
+		var pin = self.config.get(pinConfig);
+
+
+		if (enabled === true) {
+			self.logger.info('GPIO-Buttons-Extention: ' + button + ' on pin ' + pin);
+			var gpioButton = new Gpio(pin, 'in', 'both');
+			gpioButton.watch(self.listener.bind(self, button));
+			self.triggers.push(gpioButton);
+		}
+	});
+
+	return libQ.resolve();
+};
+
+
+GPIOButtonsExtention.prototype.clearTriggers = function () {
+	var self = this;
+
+	self.triggers.forEach(function (trigger, index, array) {
+		self.logger.info("GPIO-Buttons-Extention: Destroying trigger " + index);
+
+		trigger.unwatchAll();
+		trigger.unexport();
+	});
+
+	self.triggers = [];
+
+	return libQ.resolve();
+};
+
+
+GPIOButtonsExtention.prototype.listener = function (button, err, value) {
+	var self = this;
+
+	var socketCmdConfig = button.concat('.socketCmd');
+	var socketDataConfig = button.concat('.socketData');
+
+	var socketCmd = self.config.get(socketCmdConfig);
+	var socketData = self.config.get(socketDataConfig);
+
+	self.logger.info("GPIO-Buttons-Extention listener: " + socketCmd + " triggert with data " + socketData);
+	socket.emit(socketCmd, JSON.parse(socketData));
 };
 
 GPIOButtonsExtention.prototype.getConfigurationFiles = function () {
