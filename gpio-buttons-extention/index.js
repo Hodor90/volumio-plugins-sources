@@ -4,7 +4,7 @@ var libQ = require('kew');
 var Gpio = require('onoff').Gpio;
 var io = require('socket.io-client');
 var socket = io.connect('http://localhost:3000');
-var buttons = ["button0"];
+var buttons = ["button0", "button1", "button2", "button3", "button4"];
 
 
 module.exports = GPIOButtonsExtention;
@@ -79,6 +79,8 @@ GPIOButtonsExtention.prototype.getUIConfig = function () {
 		__dirname + '/UIConfig.json')
 		.then(function (uiconf) {
 
+			self.logger.info('Config: ' + JSON.stringify(self.config));
+
 			var i = 0;
 			buttons.forEach(function (button, index, array) {
 
@@ -93,30 +95,32 @@ GPIOButtonsExtention.prototype.getUIConfig = function () {
 				var socketCmdConfig = button.concat('.socketCmd');
 				var socketDataConfig = button.concat('.socketData');
 
-				uiconf.sections[0].content.forEach(element => {
+				uiconf.sections[i].content.forEach(element => {
 					if (element.id === enabledDataField) {
-						self.logger.info('Get EnabledConf: ' + self.config.get(enabledConfig));
+						self.logger.info('Get ' + enabledDataField + ': ' + self.config.get(enabledConfig));
 						element.value = self.config.get(enabledConfig);
 					}
 					if (element.id === pinDataField) {
-						self.logger.info('Get pinConf: ' + self.config.get(pinConfig));
+						self.logger.info('Get ' + pinDataField + ': ' + self.config.get(pinConfig));
 						self.logger.info('Get pinConf Label: ' + self.config.get(pinConfig).toString());
 
 						element.value.value = self.config.get(pinConfig);
 						element.value.label = self.config.get(pinConfig).toString();
 					}
 					if (element.id === socketCmdDataField) {
-						self.logger.info('Get CmdConf: ' + JSON.stringify(self.config.get(socketCmdConfig)));
+						self.logger.info('Get ' + socketCmdDataField + ': ' + JSON.stringify(self.config.get(socketCmdConfig)));
 						element.value.value = self.config.get(socketCmdConfig);
 						element.value.label = self.config.get(socketCmdConfig);
 					}
 					if (element.id === socketDataDataField) {
-						self.logger.info('Get socketDataConf: ' + JSON.stringify(self.config.get(socketDataConfig)));
+						self.logger.info('Get ' + socketDataDataField + ': ' + JSON.stringify(self.config.get(socketDataConfig)));
 						element.value.value = self.config.get(socketDataConfig);
 						self.logger.info('Get socketDataConf Label: ' + 'Playlist '.concat(self.config.get(socketDataConfig)['name']));
 						element.value.label = 'Playlist '.concat(JSON.parse(self.config.get(socketDataConfig))['name']);
 					}
 				});
+
+				i++;
 			});
 
 			defer.resolve(uiconf);
@@ -130,25 +134,38 @@ GPIOButtonsExtention.prototype.getUIConfig = function () {
 
 GPIOButtonsExtention.prototype.saveConfig = function (data) {
 	var self = this;
+	self.logger.info('Save: Config ' + JSON.stringify(data));
 
-	buttons.forEach(function (button, index, array) {
-		// Strings for data fields
-		var enabledDataField = button.concat('Enabled');
-		var pinDataField = button.concat('Pin');
-		var socketCmdDataField = button.concat('SocketCmd');
-		var socketDataDataField = button.concat('SocketData');
+	let buttonEnabledPropStr = Object.keys(data)[0];
+	let regex = /^button\d+/;
+	let match = buttonEnabledPropStr.match(regex);
 
-		// Strings for config
-		var enabledConfig = button.concat('.enabled');
-		var pinConfig = button.concat('.pin');
-		var socketCmdConfig = button.concat('.socketCmd');
-		var socketDataConfig = button.concat('.socketData');
+	let button;
 
-		self.config.set(enabledConfig, data[enabledDataField]);
-		self.config.set(pinConfig, data[pinDataField]['value']);
-		self.config.set(socketCmdConfig, data[socketCmdDataField]['value']);
-		self.config.set(socketDataConfig, data[socketDataDataField]['value']);
-	});
+	if (match) {
+		button = match[0];
+		console.log(button); // Ausgabe: button123	
+	} else {
+		throw new Error("Invalid config: " + JSON.stringify(data));
+	}
+
+	// Strings for data fields
+	var enabledDataField = button.concat('Enabled');
+	var pinDataField = button.concat('Pin');
+	var socketCmdDataField = button.concat('SocketCmd');
+	var socketDataDataField = button.concat('SocketData');
+
+	// Strings for config
+	var enabledConfig = button.concat('.enabled');
+	var pinConfig = button.concat('.pin');
+	var socketCmdConfig = button.concat('.socketCmd');
+	var socketDataConfig = button.concat('.socketData');
+
+	self.config.set(enabledConfig, data[enabledDataField]);
+	self.config.set(pinConfig, data[pinDataField]['value']);
+	self.config.set(socketCmdConfig, data[socketCmdDataField]['value']);
+	self.config.set(socketDataConfig, data[socketDataDataField]['value']);
+
 
 	self.clearTriggers()
 		.then(self.createTriggers());

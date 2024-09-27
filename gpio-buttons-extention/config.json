@@ -16,5 +16,77 @@
             "type": "string",
             "value": "{\"name\": \"1\"}"
         }
+    },
+    "button1": {
+        "enabled": {
+            "type": "boolean",
+            "value": false
+        },
+        "pin": {
+            "type": "number",
+            "value": 12
+        },
+        "socketCmd": {
+            "type": "string",
+            "value": "playPlaylist"
+        },
+        "socketData": {
+            "type": "string",
+            "value": "{\"name\": \"2\"}"
+        }
+    },
+    "button2": {
+        "enabled": {
+            "type": "boolean",
+            "value": false
+        },
+        "pin": {
+            "type": "number",
+            "value": 12
+        },
+        "socketCmd": {
+            "type": "string",
+            "value": "playPlaylist"
+        },
+        "socketData": {
+            "type": "string",
+            "value": "{\"name\": \"3\"}"
+        }
+    },
+    "button3": {
+        "enabled": {
+            "type": "boolean",
+            "value": false
+        },
+        "pin": {
+            "type": "number",
+            "value": 12
+        },
+        "socketCmd": {
+            "type": "string",
+            "value": "playPlaylist"
+        },
+        "socketData": {
+            "type": "string",
+            "value": "{\"name\": \"4\"}"
+        }
+    },
+    "button4": {
+        "enabled": {
+            "type": "boolean",
+            "value": false
+        },
+        "pin": {
+            "type": "number",
+            "value": 12
+        },
+        "socketCmd": {
+            "type": "string",
+            "value": "playPlaylist"
+        },
+        "socketData": {
+            "type": "string",
+            "value": "{\"name\": \"5\"}"
+        }
     }
 }
