@@ -17,10 +17,23 @@
           "data": ""
         }
       },
-      "askForConfirm": {
-        "title": "Confirm",
-        "message": "are you sure?"
-      }
+      "content": [
+        {
+          "id": "configRFID",
+          "element": "button",
+          "label": "Config RFID",
+          "description": "Config RFID",
+          "onClick": {
+            "type": "emit",
+            "message": "callMethod",
+            "data": {
+              "endpoint": "system_hardware/rc522",
+              "method": "configRFID",
+              "data": ""
+            }
+          }
+        }
+      ]
     }
   ]
 }

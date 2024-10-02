@@ -1,11 +1,8 @@
 'use strict';
 
 var libQ = require('kew');
-var fs = require('fs-extra');
-var config = new (require('v-conf'))();
-var exec = require('child_process').exec;
-var execSync = require('child_process').execSync;
 
+const io = require('socket.io-client');
 
 module.exports = rc522;
 function rc522(context) {
@@ -15,10 +12,7 @@ function rc522(context) {
 	this.commandRouter = this.context.coreCommand;
 	this.logger = this.context.logger;
 	this.configManager = this.context.configManager;
-
 }
-
-
 
 rc522.prototype.onVolumioStart = function () {
 	var self = this;
@@ -33,6 +27,12 @@ rc522.prototype.onStart = function () {
 	var self = this;
 	var defer = libQ.defer();
 
+	self.socket = io.connect('http://localhost:3000');
+
+	self.socket.on('playingPlaylist', function (playlist) {//goto guy!
+		self.currentPlaylist = playlist;
+		self.logger.info('QQQ Currently playing playlist: ' + self.currentPlaylist)
+	});
 
 	// Once the Plugin has successfull started resolve the promise
 	defer.resolve();
@@ -43,6 +43,9 @@ rc522.prototype.onStart = function () {
 rc522.prototype.onStop = function () {
 	var self = this;
 	var defer = libQ.defer();
+
+	self.socket.removeAllListeners();
+	self.socket.off();
 
 	// Once the Plugin has successfull stopped resolve the promise
 	defer.resolve();
@@ -55,9 +58,20 @@ rc522.prototype.onRestart = function () {
 	// Optional, use if you need it
 };
 
-rotaryencoder2.prototype.configRFID = function (data) {
+rc522.prototype.configRFID = function (data) {
 	var self = this;
-	console.log("ICH WAR DA")
+	self.logger.info('ICH WAR DA');
+
+	self.socket.emit('listPlaylist');
+	self.socket.once('pushListPlaylist', (playlists) => {
+		self.logger.info('QQQ playlist ' + playlists);
+	});
+
+	self.socket.emit('getState', '');
+	self.socket.once('pushState', (state) => {
+		self.logger.info('QQQ STATE' + JSON.stringify(state));
+	});
+
 }
 
 // Configuration Methods -----------------------------------------------------------------------------
@@ -102,167 +116,3 @@ rc522.prototype.setConf = function (varName, varValue) {
 	//Perform your installation tasks here
 };
 
-
-
-// Playback Controls ---------------------------------------------------------------------------------------
-// If your plugin is not a music_sevice don't use this part and delete it
-
-
-rc522.prototype.addToBrowseSources = function () {
-
-	// Use this function to add your music service plugin to music sources
-	//var data = {name: 'Spotify', uri: 'spotify',plugin_type:'music_service',plugin_name:'spop'};
-	this.commandRouter.volumioAddToBrowseSources(data);
-};
-
-rc522.prototype.handleBrowseUri = function (curUri) {
-	var self = this;
-
-	//self.commandRouter.logger.info(curUri);
-	var response;
-
-
-	return response;
-};
-
-
-
-// Define a method to clear, add, and play an array of tracks
-rc522.prototype.clearAddPlayTrack = function (track) {
-	var self = this;
-	self.commandRouter.pushConsoleMessage('[' + Date.now() + '] ' + 'rc522::clearAddPlayTrack');
-
-	self.commandRouter.logger.info(JSON.stringify(track));
-
-	return self.sendSpopCommand('uplay', [track.uri]);
-};
-
-rc522.prototype.seek = function (timepos) {
-	this.commandRouter.pushConsoleMessage('[' + Date.now() + '] ' + 'rc522::seek to ' + timepos);
-
-	return this.sendSpopCommand('seek ' + timepos, []);
-};
-
-// Stop
-rc522.prototype.stop = function () {
-	var self = this;
-	self.commandRouter.pushConsoleMessage('[' + Date.now() + '] ' + 'rc522::stop');
-
-
-};
-
-// Spop pause
-rc522.prototype.pause = function () {
-	var self = this;
-	self.commandRouter.pushConsoleMessage('[' + Date.now() + '] ' + 'rc522::pause');
-
-
-};
-
-// Get state
-rc522.prototype.getState = function () {
-	var self = this;
-	self.commandRouter.pushConsoleMessage('[' + Date.now() + '] ' + 'rc522::getState');
-
-
-};
-
-//Parse state
-rc522.prototype.parseState = function (sState) {
-	var self = this;
-	self.commandRouter.pushConsoleMessage('[' + Date.now() + '] ' + 'rc522::parseState');
-
-	//Use this method to parse the state and eventually send it with the following function
-};
-
-// Announce updated State
-rc522.prototype.pushState = function (state) {
-	var self = this;
-	self.commandRouter.pushConsoleMessage('[' + Date.now() + '] ' + 'rc522::pushState');
-
-	return self.commandRouter.servicePushState(state, self.servicename);
-};
-
-
-rc522.prototype.explodeUri = function (uri) {
-	var self = this;
-	var defer = libQ.defer();
-
-	// Mandatory: retrieve all info for a given URI
-
-	return defer.promise;
-};
-
-rc522.prototype.getAlbumArt = function (data, path) {
-
-	var artist, album;
-
-	if (data != undefined && data.path != undefined) {
-		path = data.path;
-	}
-
-	var web;
-
-	if (data != undefined && data.artist != undefined) {
-		artist = data.artist;
-		if (data.album != undefined)
-			album = data.album;
-		else album = data.artist;
-
-		web = '?web=' + nodetools.urlEncode(artist) + '/' + nodetools.urlEncode(album) + '/large'
-	}
-
-	var url = '/albumart';
-
-	if (web != undefined)
-		url = url + web;
-
-	if (web != undefined && path != undefined)
-		url = url + '&';
-	else if (path != undefined)
-		url = url + '?';
-
-	if (path != undefined)
-		url = url + 'path=' + nodetools.urlEncode(path);
-
-	return url;
-};
-
-
-
-
-
-rc522.prototype.search = function (query) {
-	var self = this;
-	var defer = libQ.defer();
-
-	// Mandatory, search. You can divide the search in sections using following functions
-
-	return defer.promise;
-};
-
-rc522.prototype._searchArtists = function (results) {
-
-};
-
-rc522.prototype._searchAlbums = function (results) {
-
-};
-
-rc522.prototype._searchPlaylists = function (results) {
-
-
-};
-
-rc522.prototype._searchTracks = function (results) {
-
-};
-
-rc522.prototype.goto = function (data) {
-	var self = this
-	var defer = libQ.defer()
-
-	// Handle go to artist and go to album function
-
-	return defer.promise;
-};
