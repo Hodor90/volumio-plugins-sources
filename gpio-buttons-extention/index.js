@@ -16,6 +16,8 @@ function GPIOButtonsExtention(context) {
 	self.logger = self.context.logger;
 	self.configManager = self.context.configManager;
 	self.triggers = [];
+	self.lastCmd = null;
+	self.lastSocketData = null;
 }
 
 
@@ -223,8 +225,12 @@ GPIOButtonsExtention.prototype.listener = function (button, err, value) {
 	var socketCmd = self.config.get(socketCmdConfig);
 	var socketData = self.config.get(socketDataConfig);
 
-	self.logger.info("GPIO-Buttons-Extention listener: " + socketCmd + " triggert with data " + socketData);
-	socket.emit(socketCmd, JSON.parse(socketData));
+	if (self.lastCmd !== socketCmd || self.lastSocketData !== socketData) {
+		self.lastCmd = socketCmd;
+		self.lastSocketData = socketData;
+		self.logger.info("GPIO-Buttons-Extention listener: " + socketCmd + " triggert with data " + socketData);
+		socket.emit(socketCmd, JSON.parse(socketData));
+	}
 };
 
 GPIOButtonsExtention.prototype.getConfigurationFiles = function () {
