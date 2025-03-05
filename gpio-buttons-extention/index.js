@@ -190,7 +190,7 @@ GPIOButtonsExtention.prototype.createTriggers = function () {
 
 		if (enabled === true) {
 			self.logger.info('GPIO-Buttons-Extention: ' + button + ' on pin ' + pin);
-			var gpioButton = new Gpio(pin, 'in', 'both');
+			var gpioButton = new Gpio(pin + 512, 'in', 'both');
 			gpioButton.watch(self.listener.bind(self, button));
 			self.triggers.push(gpioButton);
 		}

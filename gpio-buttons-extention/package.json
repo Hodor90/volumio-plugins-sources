@@ -25,8 +25,8 @@
 		"changelog": ""
 	},
 	"engines": {
-		"node": ">=14.15.4 <15.0.0",
-		"volumio": ">=3.742.0 <4.0.0"
+		"node": ">=14.15.4",
+		"volumio": ">=3"
 	},
 	"dependencies": {
 		"fs-extra": "^0.28.0",
